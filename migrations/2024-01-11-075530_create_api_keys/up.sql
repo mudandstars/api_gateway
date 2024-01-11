@@ -1,0 +1,6 @@
+-- Your SQL goes here
+CREATE TABLE api_keys (
+    id INT UNSIGNED PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    `key` VARCHAR(255) NOT NULL,
+    user_id INT UNSIGNED NOT NULL REFERENCES users(id)
+);
