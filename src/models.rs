@@ -11,6 +11,15 @@ pub struct User {
     pub email: String,
 }
 
+impl User {
+    pub fn api_keys(&self, conn: &mut MysqlConnection) -> Vec<ApiKey> {
+        api_keys::table
+            .filter(api_keys::user_id.eq(self.id))
+            .load::<ApiKey>(conn)
+            .expect("Error fetching API keys")
+    }
+}
+
 #[derive(Insertable)]
 #[diesel(table_name = users)]
 pub struct NewUser<'a> {
