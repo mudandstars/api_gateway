@@ -15,6 +15,6 @@ fn main() {
     stdin().read_line(&mut email).unwrap();
     let email = name.trim_end(); // Remove the trailing newline
 
-    let user = create_user_with_api_key(connection, &name, &email);
+    let user = store_user_with_api_key(connection, &name, &email);
     println!("\nSaved user '{}' with id:{}", name, user.id);
 }

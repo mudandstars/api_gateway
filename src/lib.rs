@@ -16,15 +16,15 @@ pub fn establish_connection() -> MysqlConnection {
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
-pub fn create_user_with_api_key(conn: &mut MysqlConnection, name: &str, email: &str) -> User {
-    let user = create_user(conn, name, email);
+pub fn store_user_with_api_key(conn: &mut MysqlConnection, name: &str, email: &str) -> User {
+    let user = store_user(conn, name, email);
 
-    create_api_key(conn, user.id);
+    store_api_key(conn, user.id);
 
     user
 }
 
-fn create_user(conn: &mut MysqlConnection, name: &str, email: &str) -> User {
+fn store_user(conn: &mut MysqlConnection, name: &str, email: &str) -> User {
     use crate::schema::users;
 
     let new_user = NewUser { name, email };
@@ -42,7 +42,7 @@ fn create_user(conn: &mut MysqlConnection, name: &str, email: &str) -> User {
     .expect("Error while saving post")
 }
 
-fn create_api_key(conn: &mut MysqlConnection, user_id: u32) -> ApiKey {
+fn store_api_key(conn: &mut MysqlConnection, user_id: u32) -> ApiKey {
     use crate::schema::api_keys;
 
     let new_api_key = NewApiKey { key: "something", user_id };
