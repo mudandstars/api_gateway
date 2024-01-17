@@ -1,7 +1,7 @@
 pub mod models;
 pub mod schema;
+pub mod handler;
 
-use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 use diesel::prelude::*;
 use dotenvy::dotenv;
 use models::ApiKey;
@@ -12,22 +12,10 @@ use self::models::{User, NewUser, NewApiKey};
 pub fn establish_connection() -> MysqlConnection {
     dotenv().ok();
 
-    let database_url = if env::var("RUNTIME_ENV").expect("RUNTIME_ENV must be set") == "testing" {
-            env::var("TESTING_DATABASE_URL").expect("TESTING_DATABASE_URL must be set")
-        } else {
-            env::var("DATABASE_URL").expect("DATABASE_URL must be set")
-        };
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
     MysqlConnection::establish(&database_url)
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
-}
-
-
-const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
-type DB = diesel::mysql::Mysql;
-
-pub fn run_db_migrations(conn: &mut impl MigrationHarness<DB>) {
-    conn.run_pending_migrations(MIGRATIONS).expect("Could not run migrations");
 }
 
 pub fn store_user_with_api_key(conn: &mut MysqlConnection, name: &str, email: &str) -> User {
@@ -72,4 +60,28 @@ fn store_api_key(conn: &mut MysqlConnection, user_id: u32) -> ApiKey {
             .first(conn)
     })
     .expect("Error while saving api key")
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use diesel::result::Error;
+
+
+    #[test]
+    fn test_can_store_a_user() {
+
+        establish_connection().test_transaction::<_, Error, _>(|conn| {
+            let name = "test user";
+            let email = "test@user.com";
+
+            let user = store_user_with_api_key(conn, name, email);
+
+            assert_eq!(user.name, name);
+            assert_eq!(user.email, email);
+
+            Ok(())
+        });
+    }
 }
