@@ -1,8 +1,9 @@
-use crate::schema::users;
 use crate::schema::api_keys;
+use crate::schema::users;
+use rocket::serde::Serialize;
 use diesel::prelude::*;
 
-#[derive(Queryable, Selectable)]
+#[derive(Queryable, Selectable, Identifiable, QueryableByName)]
 #[diesel(table_name = users)]
 #[diesel(check_for_backend(diesel::mysql::Mysql))]
 pub struct User {
@@ -22,11 +23,11 @@ impl User {
 
 #[derive(Insertable)]
 #[diesel(table_name = users)]
+#[derive(Serialize)]
 pub struct NewUser<'a> {
     pub name: &'a str,
     pub email: &'a str,
 }
-
 
 #[derive(Queryable, Selectable)]
 #[diesel(table_name = api_keys)]
