@@ -8,10 +8,10 @@ use diesel::prelude::*;
 #[test]
 fn test_can_store_a_user() {
     database::establish_connection().test_transaction::<_, Error, _>(|conn| {
-        let name = "test user";
-        let email = "test@user.com";
+        let name = String::from("test user");
+        let email = String::from("test@user.com");
 
-        let user = store_user_with_api_key(conn, &NewUser { name, email });
+        let user = store_user_with_api_key(conn, &NewUser { name: name.clone(), email: email.clone() });
 
         assert_eq!(user.name, name);
         assert_eq!(user.email, email);

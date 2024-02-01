@@ -1,11 +1,11 @@
 use crate::schema::api_keys;
 use crate::schema::users;
-use rocket::serde::Serialize;
 use diesel::prelude::*;
 
 #[derive(Queryable, Selectable, Identifiable, QueryableByName)]
 #[diesel(table_name = users)]
 #[diesel(check_for_backend(diesel::mysql::Mysql))]
+#[derive(serde::Serialize)]
 pub struct User {
     pub id: u32,
     pub name: String,
@@ -23,10 +23,10 @@ impl User {
 
 #[derive(Insertable)]
 #[diesel(table_name = users)]
-#[derive(Serialize)]
-pub struct NewUser<'a> {
-    pub name: &'a str,
-    pub email: &'a str,
+#[derive(serde::Deserialize, serde::Serialize)]
+pub struct NewUser {
+    pub name: String,
+    pub email: String,
 }
 
 #[derive(Queryable, Selectable)]
@@ -40,7 +40,7 @@ pub struct ApiKey {
 
 #[derive(Insertable)]
 #[diesel(table_name = api_keys)]
-pub struct NewApiKey<'a> {
-    pub key: &'a str,
+pub struct NewApiKey {
+    pub key: String,
     pub user_id: u32,
 }

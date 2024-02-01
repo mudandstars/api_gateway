@@ -5,7 +5,7 @@ pub fn store(conn: &mut MysqlConnection, user_id: u32) -> ApiKey {
     use crate::schema::api_keys;
 
     let new_api_key = NewApiKey {
-        key: "something",
+        key: String::from("something"),
         user_id,
     };
 
