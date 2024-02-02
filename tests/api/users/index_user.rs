@@ -1,7 +1,7 @@
 use api_gateway::app::{app, mysql_pool};
-use api_gateway::database::{self, establish_connection};
-use api_gateway::models::{ApiKey, NewUser, User};
-use api_gateway::schema::{api_keys, users};
+use api_gateway::database::establish_connection;
+use api_gateway::models::NewUser;
+use api_gateway::schema::users;
 use axum::{
     body::Body,
     http::{self, Request, StatusCode},
