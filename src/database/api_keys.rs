@@ -1,7 +1,7 @@
 use crate::models::{ApiKey, NewApiKey};
 use diesel::prelude::*;
 
-pub fn store(conn: &mut MysqlConnection, user_id: u32) -> ApiKey {
+pub fn store_new_api_key(conn: &mut MysqlConnection, user_id: u32) -> ApiKey {
     use crate::schema::api_keys;
 
     let new_api_key = NewApiKey {

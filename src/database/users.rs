@@ -2,7 +2,7 @@ use diesel::prelude::*;
 
 use crate::models::{NewUser, User};
 
-pub fn store(conn: &mut MysqlConnection, new_user: &NewUser) -> User {
+pub fn store_user(conn: &mut MysqlConnection, new_user: &NewUser) -> Result<User, diesel::result::Error> {
     use crate::schema::users;
 
     conn.transaction(|conn| {
@@ -15,5 +15,5 @@ pub fn store(conn: &mut MysqlConnection, new_user: &NewUser) -> User {
             .select(User::as_select())
             .first(conn)
     })
-    .expect("Error while saving post")
 }
+

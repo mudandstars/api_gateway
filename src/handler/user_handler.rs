@@ -1,26 +1,20 @@
 use crate::models::{NewUser, User};
+use crate::store_user_with_api_key;
 use axum::{extract::State, http::StatusCode, response::Json};
-
-use diesel::prelude::*;
 
 pub async fn store_user(
     State(pool): State<deadpool_diesel::mysql::Pool>,
     Json(new_user): Json<NewUser>,
-) -> Result<Json<User>, (StatusCode, String)> {
-    use crate::schema::users::dsl::*;
+) -> Result<(StatusCode, Json<User>), (StatusCode, String)> {
     let conn = pool.get().await.map_err(internal_error)?;
 
     let res = conn
-        .interact(|conn| {
-            diesel::insert_into(users).values(new_user).execute(conn)?;
-
-            users.order(id.desc()).select(User::as_select()).first(conn)
-        })
+        .interact(move |conn| store_user_with_api_key(conn, &new_user))
         .await
         .map_err(internal_error)?
         .map_err(internal_error)?;
 
-    Ok(Json(res))
+    Ok((StatusCode::CREATED, Json(res)))
 }
 
 fn internal_error<E>(err: E) -> (StatusCode, String)

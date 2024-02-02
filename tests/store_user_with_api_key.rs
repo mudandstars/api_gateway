@@ -11,7 +11,7 @@ fn test_can_store_a_user() {
         let name = String::from("test user");
         let email = String::from("test@user.com");
 
-        let user = store_user_with_api_key(conn, &NewUser { name: name.clone(), email: email.clone() });
+        let user = store_user_with_api_key(conn, &NewUser { name: name.clone(), email: email.clone() }).unwrap();
 
         assert_eq!(user.name, name);
         assert_eq!(user.email, email);
