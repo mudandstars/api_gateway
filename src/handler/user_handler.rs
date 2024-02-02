@@ -6,6 +6,8 @@ use diesel::QueryDsl;
 
 use diesel::prelude::*;
 
+use super::internal_error;
+
 pub async fn store_user(
     State(pool): State<deadpool_diesel::mysql::Pool>,
     Json(new_user): Json<NewUser>,
@@ -38,11 +40,4 @@ pub async fn index_users(
         .map_err(internal_error)?;
 
     Ok(Json(IndexUserResponse { users }))
-}
-
-fn internal_error<E>(err: E) -> (StatusCode, String)
-where
-    E: std::error::Error,
-{
-    (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
 }
