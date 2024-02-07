@@ -1,8 +1,9 @@
+pub mod app;
 pub mod database;
 pub mod handler;
 pub mod models;
 pub mod schema;
-pub mod app;
+pub mod testing;
 
 use database::api_keys;
 use database::users;
@@ -12,7 +13,10 @@ use models::NewUser;
 
 use self::models::User;
 
-pub fn store_user_with_api_key(conn: &mut MysqlConnection, new_user: &NewUser) -> Result<User, result::Error> {
+pub fn store_user_with_api_key(
+    conn: &mut MysqlConnection,
+    new_user: &NewUser,
+) -> Result<User, result::Error> {
     let user = users::store_user(conn, new_user)?;
 
     api_keys::store_new_api_key(conn, user.id);
@@ -22,27 +26,29 @@ pub fn store_user_with_api_key(conn: &mut MysqlConnection, new_user: &NewUser) -
 
 #[cfg(test)]
 mod tests {
+    use self::testing::TestContext;
+
     use super::*;
     use diesel::result::Error;
 
     #[test]
     fn test_can_store_a_user() {
-        database::establish_connection().test_transaction::<_, Error, _>(|conn| {
-            let name = String::from("test user");
-            let email = String::from("test@user.com");
+        let test_context = TestContext::new();
 
-            let user = store_user_with_api_key(
-                conn,
-                &NewUser {
-                    name: name.clone(),
-                    email: email.clone(),
-                },
-            ).unwrap();
+        database::establish_connection(&test_context.db_url).test_transaction::<_, Error, _>(
+            |conn| {
+                let new_user = NewUser {
+                    name: String::from("test user"),
+                    email: String::from("test@user.com"),
+                };
 
-            assert_eq!(user.name, name);
-            assert_eq!(user.email, email);
+                let user = store_user_with_api_key(conn, &new_user).unwrap();
 
-            Ok(())
-        });
+                assert_eq!(user.name, new_user.name);
+                assert_eq!(user.email, new_user.email);
+
+                Ok(())
+            },
+        );
     }
 }

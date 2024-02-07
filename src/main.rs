@@ -1,4 +1,5 @@
 use std::net::SocketAddr;
+use dotenvy::dotenv;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use api_gateway::app::{app, mysql_pool};
@@ -13,7 +14,11 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let app = app(mysql_pool()).await;
+    dotenv().ok();
+
+    let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
+    let app = app(mysql_pool(&db_url)).await;
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     tracing::debug!("listening on {addr}");

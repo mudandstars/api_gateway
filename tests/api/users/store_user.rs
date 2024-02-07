@@ -12,9 +12,13 @@ use http_body_util::BodyExt;
 use serde_json::Value;
 use tower::util::ServiceExt;
 
+use api_gateway::testing::TestContext;
+
 #[tokio::test]
 async fn test_user_can_be_stored() {
-    let app = app(mysql_pool()).await;
+    let test_context = TestContext::new();
+
+    let app = app(mysql_pool(&test_context.db_url)).await;
 
     let new_user = NewUser {
         name: String::from("example_user"),
@@ -45,7 +49,11 @@ async fn test_user_can_be_stored() {
 
     let user: Result<User, diesel::result::Error> = users::table
         .find(user_id as u32)
-        .first(&mut establish_connection());
+        .first(&mut establish_connection(&test_context.db_url));
+
+    dbg!("{}", &user.as_ref().unwrap().name);
+    dbg!("{}", &user.as_ref().unwrap().email);
+    dbg!("{}", &user.as_ref().unwrap().id);
 
     match user {
         Ok(user) => {
@@ -58,7 +66,9 @@ async fn test_user_can_be_stored() {
 
 #[tokio::test]
 async fn test_stores_an_api_key_with_the_user() {
-    let app = app(mysql_pool()).await;
+    let test_context = TestContext::new();
+
+    let app = app(mysql_pool(&test_context.db_url)).await;
 
     let new_user = NewUser {
         name: String::from("example_user"),
@@ -84,7 +94,7 @@ async fn test_stores_an_api_key_with_the_user() {
 
     let api_key: Result<ApiKey, diesel::result::Error> = api_keys::table
         .filter(api_keys::user_id.eq(user_id as u32))
-        .first::<ApiKey>(&mut database::establish_connection());
+        .first::<ApiKey>(&mut database::establish_connection(&test_context.db_url));
 
     match api_key {
         Ok(api_key) => {

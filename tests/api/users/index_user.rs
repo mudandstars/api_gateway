@@ -2,6 +2,8 @@ use api_gateway::app::{app, mysql_pool};
 use api_gateway::database::establish_connection;
 use api_gateway::models::NewUser;
 use api_gateway::schema::users;
+use api_gateway::store_user_with_api_key;
+use api_gateway::testing::TestContext;
 use axum::{
     body::Body,
     http::{self, Request, StatusCode},
@@ -14,23 +16,23 @@ use tower::util::ServiceExt;
 
 #[tokio::test]
 async fn test_users_can_be_retrieved() {
-    let app = app(mysql_pool()).await;
+    let test_context = TestContext::new();
+
+    let app = app(mysql_pool(&test_context.db_url)).await;
 
     let new_user = NewUser {
         name: String::from("example_user"),
         email: String::from("user@example.com"),
     };
 
-    let users_count: Result<i64, diesel::result::Error> =
-        users::table.count().get_result(&mut establish_connection());
+    store_user_with_api_key(&mut establish_connection(&test_context.db_url), &new_user).unwrap();
 
     let response = app
         .oneshot(
             Request::builder()
                 .method(http::Method::GET)
                 .uri("/users")
-                .header(http::header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
-                .body(Body::from(serde_json::to_vec(&new_user).unwrap()))
+                .body(Body::from(()))
                 .unwrap(),
         )
         .await
@@ -43,5 +45,5 @@ async fn test_users_can_be_retrieved() {
 
     let users = body["users"].as_array().unwrap();
 
-    assert_eq!(users.len(), users_count.unwrap() as usize);
+    assert_eq!(users.len(), 1);
 }

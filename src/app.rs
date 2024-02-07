@@ -1,7 +1,6 @@
 use axum::{routing::post, Router};
 use deadpool_diesel::mysql::Pool;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-use dotenvy::dotenv;
 use tower_http::trace::TraceLayer;
 
 use crate::handler;
@@ -29,12 +28,7 @@ pub async fn app(pool: Pool) -> Router {
         .layer(TraceLayer::new_for_http())
 }
 
-pub fn mysql_pool() -> Pool {
-    dotenv().ok();
-
-    let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-
-    // set up connection pool
+pub fn mysql_pool(db_url: &str) -> Pool {
     let manager = deadpool_diesel::mysql::Manager::new(db_url, deadpool_diesel::Runtime::Tokio1);
     deadpool_diesel::mysql::Pool::builder(manager)
         .build()
