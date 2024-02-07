@@ -1,3 +1,4 @@
+use super::internal_error;
 use crate::models::{NewUser, User};
 use crate::schema::users;
 use crate::store_user_with_api_key;
@@ -5,8 +6,6 @@ use axum::{extract::State, http::StatusCode, response::Json};
 use diesel::QueryDsl;
 
 use diesel::prelude::*;
-
-use super::internal_error;
 
 pub async fn store_user(
     State(pool): State<deadpool_diesel::mysql::Pool>,

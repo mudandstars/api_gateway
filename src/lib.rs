@@ -4,6 +4,7 @@ pub mod handler;
 pub mod models;
 pub mod schema;
 pub mod testing;
+pub mod middleware;
 
 use database::api_keys;
 use database::users;

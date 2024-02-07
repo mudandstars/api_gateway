@@ -1,15 +1,12 @@
-use api_gateway::app::{app, mysql_pool};
+use api_gateway::app::{create_app, mysql_pool};
 use api_gateway::database::establish_connection;
 use api_gateway::models::NewUser;
-use api_gateway::schema::users;
 use api_gateway::store_user_with_api_key;
 use api_gateway::testing::TestContext;
 use axum::{
     body::Body,
     http::{self, Request, StatusCode},
 };
-use diesel::prelude::*;
-use diesel::QueryDsl;
 use http_body_util::BodyExt;
 use serde_json::Value;
 use tower::util::ServiceExt;
@@ -18,7 +15,7 @@ use tower::util::ServiceExt;
 async fn test_users_can_be_retrieved() {
     let test_context = TestContext::new();
 
-    let app = app(mysql_pool(&test_context.db_url)).await;
+    let app = create_app(mysql_pool(&test_context.db_url)).await;
 
     let new_user = NewUser {
         name: String::from("example_user"),

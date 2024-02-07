@@ -1,4 +1,4 @@
-use api_gateway::app::{app, mysql_pool};
+use api_gateway::app::{create_app, mysql_pool};
 use api_gateway::database::{self, establish_connection};
 use api_gateway::models::{ApiKey, NewUser, User};
 use api_gateway::schema::{api_keys, users};
@@ -18,7 +18,7 @@ use api_gateway::testing::TestContext;
 async fn test_user_can_be_stored() {
     let test_context = TestContext::new();
 
-    let app = app(mysql_pool(&test_context.db_url)).await;
+    let app = create_app(mysql_pool(&test_context.db_url)).await;
 
     let new_user = NewUser {
         name: String::from("example_user"),
@@ -68,7 +68,7 @@ async fn test_user_can_be_stored() {
 async fn test_stores_an_api_key_with_the_user() {
     let test_context = TestContext::new();
 
-    let app = app(mysql_pool(&test_context.db_url)).await;
+    let app = create_app(mysql_pool(&test_context.db_url)).await;
 
     let new_user = NewUser {
         name: String::from("example_user"),

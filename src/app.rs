@@ -1,13 +1,14 @@
 use axum::{routing::post, Router};
 use deadpool_diesel::mysql::Pool;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+use handler::{sample_endpoints, user_handler};
 use tower_http::trace::TraceLayer;
 
-use crate::handler;
+use crate::{handler, middleware::logger::RequestLoggerLayer};
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
 
-pub async fn app(pool: Pool) -> Router {
+pub async fn create_app(pool: Pool) -> Router {
     {
         let conn = pool.get().await.unwrap();
 
@@ -17,15 +18,20 @@ pub async fn app(pool: Pool) -> Router {
             .unwrap();
     }
 
-    // build our application with some routes
+    let logger_layer = RequestLoggerLayer::new(pool.clone());
+
     Router::new()
-        // .route("/hello", get(list_users))
+        .route(
+            "/sample-endpoints",
+            post(sample_endpoints::sample_endpoint).get(sample_endpoints::sample_endpoint),
+        )
         .route(
             "/users",
-            post(handler::user_handler::store_user).get(handler::user_handler::index_users),
+            post(user_handler::store_user).get(user_handler::index_users),
         )
         .with_state(pool)
         .layer(TraceLayer::new_for_http())
+        .layer(logger_layer)
 }
 
 pub fn mysql_pool(db_url: &str) -> Pool {
