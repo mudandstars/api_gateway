@@ -4,7 +4,7 @@ use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use handler::{sample_endpoints, user_handler};
 use tower_http::trace::TraceLayer;
 
-use crate::{handler, middleware::logger::RequestLoggerLayer};
+use crate::handler;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
 
@@ -18,8 +18,6 @@ pub async fn create_app(pool: Pool) -> Router {
             .unwrap();
     }
 
-    let logger_layer = RequestLoggerLayer::new(pool.clone());
-
     Router::new()
         .route(
             "/sample-endpoints",
@@ -31,7 +29,6 @@ pub async fn create_app(pool: Pool) -> Router {
         )
         .with_state(pool)
         .layer(TraceLayer::new_for_http())
-        .layer(logger_layer)
 }
 
 pub fn mysql_pool(db_url: &str) -> Pool {
