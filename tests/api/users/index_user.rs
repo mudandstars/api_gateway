@@ -1,5 +1,4 @@
-use api_gateway::app::{create_app, mysql_pool};
-use api_gateway::database::establish_connection;
+use api_gateway::app::create_app;
 use api_gateway::models::NewUser;
 use api_gateway::store_user_with_api_key;
 use api_gateway::testing::TestContext;
@@ -15,14 +14,14 @@ use tower::util::ServiceExt;
 async fn test_users_can_be_retrieved() {
     let test_context = TestContext::new();
 
-    let app = create_app(mysql_pool(&test_context.db_url)).await;
+    let app = create_app(test_context.pool()).await;
 
     let new_user = NewUser {
         name: String::from("example_user"),
         email: String::from("user@example.com"),
     };
 
-    store_user_with_api_key(&mut establish_connection(&test_context.db_url), &new_user).unwrap();
+    store_user_with_api_key(&mut test_context.conn(), &new_user).unwrap();
 
     let response = app
         .oneshot(

@@ -1,3 +1,4 @@
+use deadpool_diesel::mysql::Pool;
 use diesel::mysql::MysqlConnection;
 use diesel::prelude::*;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
@@ -6,11 +7,12 @@ use rand::{distributions::Alphanumeric, Rng}; // 0.8
 use std::env;
 use std::time::SystemTime;
 
+use crate::app::mysql_pool;
 use crate::database::establish_connection;
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
 
 pub struct TestContext {
-    pub db_url: String,
+    db_url: String,
 }
 
 impl TestContext {
@@ -25,6 +27,14 @@ impl TestContext {
         TestContext {
             db_url: TestContext::create_new_database(&unique_name),
         }
+    }
+
+    pub fn pool(&self) -> Pool {
+       mysql_pool(&self.db_url)
+    }
+
+    pub fn conn(&self) -> MysqlConnection {
+       establish_connection(&self.db_url)
     }
 
     fn create_new_database(name: &str) -> String {

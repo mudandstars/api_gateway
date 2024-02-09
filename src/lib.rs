@@ -36,7 +36,7 @@ mod tests {
     fn test_can_store_a_user() {
         let test_context = TestContext::new();
 
-        database::establish_connection(&test_context.db_url).test_transaction::<_, Error, _>(
+        test_context.conn().test_transaction::<_, Error, _>(
             |conn| {
                 let new_user = NewUser {
                     name: String::from("test user"),

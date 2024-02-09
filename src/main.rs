@@ -1,28 +1,11 @@
 use dotenvy::dotenv;
 use std::net::SocketAddr;
-use tracing::{Event, Subscriber};
-use tracing_subscriber::{layer::Context, registry::LookupSpan, Layer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use api_gateway::{
     app::{create_app, mysql_pool},
     middleware::logger::RequestLoggerLayer,
 };
-
-pub struct CustomLayer;
-
-impl<S> Layer<S> for CustomLayer
-where
-    S: Subscriber + for<'a> LookupSpan<'a>,
-{
-    fn on_event(&self, event: &Event<'_>, ctx: Context<'_, S>) {
-        // Implement your custom logic here
-        // For example, print the event
-        println!("Custom layer got an event: {:?}", event);
-    }
-
-    // You can implement other methods from the Layer trait as needed
-}
 
 #[tokio::main]
 async fn main() {
@@ -32,7 +15,6 @@ async fn main() {
                 .unwrap_or_else(|_| "debug".into()),
         )
         .with(tracing_subscriber::fmt::layer())
-        .with(CustomLayer)
         .init();
 
     dotenv().ok();
