@@ -41,7 +41,7 @@ where
 
         Box::pin(async move {
             let response = future.await?;
-            let duration_in_microseconds = start_time.elapsed().as_millis() as u64;
+            let duration_in_microseconds = start_time.elapsed().as_micros() as u64;
             let status = response.status().as_u16();
             let api_key_str = api_key.map_or_else(
                 || "None".to_string(),
