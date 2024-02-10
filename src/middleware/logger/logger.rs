@@ -1,4 +1,5 @@
 use axum::{body::Body, http::Request, response::Response};
+use chrono::Utc;
 use deadpool_diesel::mysql::Pool;
 use diesel::insert_into;
 use futures_util::future::BoxFuture;
@@ -37,6 +38,7 @@ where
     }
 
     fn call(&mut self, req: Request<Body>) -> Self::Future {
+        let now = Utc::now();
         let start_time = Instant::now();
         let pool = self.pool.clone();
         let uri = req.uri().clone().to_string();
@@ -58,8 +60,13 @@ where
             let _ = conn
                 .interact(move |conn| {
                     println!(
-                        "{{method={} uri={:?} status={} duration(us)={} API_KEY={}}}",
-                        method, uri, status, duration_in_microseconds, api_key_str
+                        "{} {{method={} uri={:?} status={} duration(μs)={} API_KEY={}}}",
+                        now.to_rfc3339_opts(chrono::SecondsFormat::Micros, true),
+                        method,
+                        uri,
+                        status,
+                        duration_in_microseconds,
+                        api_key_str
                     );
                     let api_key = api_keys::table
                         .filter(api_keys::key.eq(api_key_str))
