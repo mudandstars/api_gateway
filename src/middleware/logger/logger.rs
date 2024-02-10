@@ -41,7 +41,7 @@ where
         let pool = self.pool.clone();
         let uri = req.uri().clone().to_string();
         let method = req.method().clone().to_string();
-        let api_key = req.headers().get("API_KEY").cloned(); // Assuming API-Key is the header
+        let api_key = req.headers().get(super::super::API_KEY_NAME).cloned(); // Assuming API-Key is the header
 
         let future = self.inner.call(req);
 
@@ -55,28 +55,31 @@ where
             );
 
             let conn = pool.get().await.expect("Failed to get DB connection");
-            conn.interact(move |conn| {
-                println!(
-                    "Method={}, uri={:?}, API Key: {}, Status: {}, Duration in microseconds: {:?}",
-                    method, uri, api_key_str, status, duration_in_microseconds
-                );
-                let api_key = api_keys::table
-                    .filter(api_keys::key.eq(api_key_str))
-                    .first::<ApiKey>(conn);
+            let _ = conn
+                .interact(move |conn| {
+                    println!(
+                        "{{method={} uri={:?} status={} duration(us)={} API_KEY={}}}",
+                        method, uri, status, duration_in_microseconds, api_key_str
+                    );
+                    let api_key = api_keys::table
+                        .filter(api_keys::key.eq(api_key_str))
+                        .first::<ApiKey>(conn)
+                        .optional();
 
-                insert_into(logs::table)
-                    .values(&NewLog {
-                        method,
-                        uri,
-                        status,
-                        duration_in_microseconds,
-                        api_key_id: api_key.unwrap().id,
-                    })
-                    .execute(conn)
-            })
-            .await
-            .expect("DB interaction failed")
-            .expect("database result is error");
+                    if let Ok(Some(api_key)) = api_key {
+                        insert_into(logs::table)
+                            .values(&NewLog {
+                                method,
+                                uri,
+                                status,
+                                duration_in_microseconds,
+                                api_key_id: api_key.id,
+                            })
+                            .execute(conn)
+                            .expect("DB interaction failed");
+                    };
+                })
+                .await;
 
             Ok(response)
         })

@@ -8,6 +8,7 @@ use diesel::prelude::*;
 #[diesel(table_name = users)]
 #[diesel(check_for_backend(diesel::mysql::Mysql))]
 #[derive(serde::Serialize)]
+#[derive(Debug)]
 pub struct User {
     pub id: u32,
     pub name: String,
@@ -51,6 +52,7 @@ pub struct NewApiKey {
 #[derive(Queryable, Selectable)]
 #[diesel(table_name = api_keys)]
 #[diesel(check_for_backend(diesel::mysql::Mysql))]
+#[derive(Debug)]
 pub struct ApiKey {
     pub id: u32,
     pub key: String,
@@ -81,6 +83,7 @@ pub struct NewLog {
 #[derive(Queryable, Selectable)]
 #[diesel(table_name = logs)]
 #[diesel(check_for_backend(diesel::mysql::Mysql))]
+#[derive(Debug)]
 pub struct Log {
     pub id: u32,
     pub api_key_id: u32,

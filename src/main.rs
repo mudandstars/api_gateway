@@ -4,7 +4,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use api_gateway::{
     app::{create_app, mysql_pool},
-    middleware::RequestLoggerLayer,
+    middleware::{AuthorizationServiceLayer, RequestLoggerLayer},
 };
 
 #[tokio::main]
@@ -24,7 +24,11 @@ async fn main() {
     let pool = mysql_pool(&db_url);
 
     let logger_layer = RequestLoggerLayer::new(pool.clone());
-    let app = create_app(pool).await.layer(logger_layer);
+    let authorization_service_layer = AuthorizationServiceLayer::new(pool.clone());
+    let app = create_app(pool)
+        .await
+        .layer(authorization_service_layer)
+        .layer(logger_layer);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     tracing::debug!("listening on {addr}");
