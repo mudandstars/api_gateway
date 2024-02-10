@@ -4,7 +4,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use api_gateway::{
     app::{create_app, mysql_pool},
-    middleware::logger::RequestLoggerLayer,
+    middleware::RequestLoggerLayer,
 };
 
 #[tokio::main]
