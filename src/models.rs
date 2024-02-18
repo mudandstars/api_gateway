@@ -58,6 +58,7 @@ pub struct ApiKey {
     pub key: String,
     pub user_id: u32,
     pub created_at: chrono::NaiveDateTime,
+    pub last_used_at: Option<chrono::NaiveDateTime>,
     pub updated_at: Option<chrono::NaiveDateTime>,
 }
 

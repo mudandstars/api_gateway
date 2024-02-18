@@ -4,5 +4,6 @@ CREATE TABLE api_keys (
     `key` VARCHAR(255) NOT NULL,
     user_id INT UNSIGNED NOT NULL REFERENCES users(id),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_used_at TIMESTAMP,
     updated_at TIMESTAMP
 );

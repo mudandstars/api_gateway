@@ -1,5 +1,6 @@
 use axum::http::StatusCode;
 use axum::{body::Body, http::Request, response::Response};
+use chrono::Utc;
 use deadpool_diesel::mysql::Pool;
 use futures_util::future::BoxFuture;
 use std::task::{Context, Poll};
@@ -55,11 +56,21 @@ where
                 .await
                 .expect("DB interaction failed");
 
-            if api_key.is_err() {
+            if let Ok(api_key) = api_key {
+                conn.interact(move |conn| {
+                    diesel::update(api_keys::table.filter(api_keys::id.eq(api_key.id)))
+                        .set(api_keys::last_used_at.eq(Utc::now().naive_utc()))
+                        .execute(conn)
+                })
+                .await
+                .expect("DB interaction failed")
+                .expect("update failed");
+            } else {
                 let resp = Response::builder()
                     .status(StatusCode::UNAUTHORIZED)
                     .body(Body::from("Unauthorized"))
                     .expect("Failed to construct response");
+
                 return Ok(resp);
             }
 

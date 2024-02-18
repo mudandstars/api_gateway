@@ -89,4 +89,50 @@ mod tests {
 
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
+
+    #[tokio::test]
+    async fn test_updates_last_used_at_of_api_key() {
+        let test_context = TestContext::new();
+        let pool = test_context.pool();
+
+        let authorization_service_layer = AuthorizationServiceLayer::new(pool.clone());
+        let app = create_app(pool).await.layer(authorization_service_layer);
+
+        let user = store_user_with_api_key(
+            &mut test_context.conn(),
+            &NewUser {
+                name: String::from("example_user"),
+                email: String::from("user@example.com"),
+            },
+        )
+        .unwrap();
+
+        let api_keys = user.api_keys(&mut test_context.conn());
+        if let Some(api_key) = api_keys.first() {
+            assert!(&api_key.last_used_at.is_none());
+        } else {
+            panic!("has no api key")
+        }
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(http::Method::GET)
+                    .uri("/sample-endpoints")
+                    .header("API_KEY", &api_keys.first().unwrap().key)
+                    .body(Body::from(()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let api_keys = user.api_keys(&mut test_context.conn());
+        if let Some(api_key) = api_keys.first() {
+            assert!(&api_key.last_used_at.is_some(), "api key's last_used_at was not set");
+        } else {
+            panic!("api key was not found")
+        }
+    }
 }

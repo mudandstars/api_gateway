@@ -7,6 +7,7 @@ diesel::table! {
         key -> Varchar,
         user_id -> Unsigned<Integer>,
         created_at -> Timestamp,
+        last_used_at -> Nullable<Timestamp>,
         updated_at -> Nullable<Timestamp>,
     }
 }
