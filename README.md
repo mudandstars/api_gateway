@@ -3,6 +3,9 @@
 ### This is my personal practice project to advance my rust expertise using axum and diesel.
 
 ### (Possible) Goals
+###### NEXT:
+- remove log
+- remove error message from the response
 
 -   can manage users and their api keys via api
 -   has a few sample endpoints that fulfill no real purpose
