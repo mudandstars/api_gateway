@@ -1,9 +1,7 @@
 use axum::http::StatusCode;
 
-
-pub mod user_handler;
 pub mod sample_endpoints;
-
+pub mod user_handler;
 
 fn internal_error<E>(err: E) -> (StatusCode, String)
 where

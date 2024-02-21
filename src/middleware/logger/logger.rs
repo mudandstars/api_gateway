@@ -1,3 +1,5 @@
+use axum::body::to_bytes;
+use axum::http::StatusCode;
 use axum::{body::Body, http::Request, response::Response};
 use chrono::Utc;
 use deadpool_diesel::mysql::Pool;
@@ -50,18 +52,32 @@ where
         Box::pin(async move {
             let response = future.await?;
             let duration_in_microseconds = start_time.elapsed().as_micros() as u64;
-            let status = response.status().as_u16();
             let api_key_str = api_key.map_or_else(
                 || "None".to_string(),
                 |k| k.to_str().unwrap_or("Invalid").to_string(),
             );
+            let (parts, body) = response.into_parts();
+            let bytes = to_bytes(body, 1000)
+                .await
+                .expect("Failed to collect body bytes");
+            let status = parts.status.as_u16();
+            let mut error_message: Option<String> = None;
+            let mut log_type = LogType::INFO;
+
+            if status == StatusCode::INTERNAL_SERVER_ERROR {
+                error_message = Some(String::from(
+                    std::str::from_utf8(&bytes).expect("Body is not valid UTF-8"),
+                ));
+                log_type = LogType::ERROR;
+            }
 
             let conn = pool.get().await.expect("Failed to get DB connection");
             let _ = conn
                 .interact(move |conn| {
                     println!(
-                        "{} {{method={} uri={:?} status={} duration(μs)={} API_KEY={}}}",
+                        "{} {}: {{method={} uri={:?} status={} duration(μs)={} API_KEY={}}}",
                         now.to_rfc3339_opts(chrono::SecondsFormat::Micros, true),
+                        log_type,
                         method,
                         uri,
                         status,
@@ -81,7 +97,8 @@ where
                                 status,
                                 duration_in_microseconds,
                                 api_key_id: api_key.id,
-                                type_: LogType::INFO.into(),
+                                error_message,
+                                type_: log_type.into(),
                             })
                             .execute(conn)
                             .expect("DB interaction failed");
@@ -89,6 +106,7 @@ where
                 })
                 .await;
 
+            let response = Response::from_parts(parts, Body::from(bytes));
             Ok(response)
         })
     }

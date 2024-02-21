@@ -25,8 +25,11 @@ impl<S> Layer<S> for RequestLoggerLayer {
 mod tests {
     use super::*;
     use crate::{
-        app::create_app, middleware::AuthorizationServiceLayer, models::{LogType, NewUser},
-        store_user_with_api_key, testing::TestContext,
+        app::create_app,
+        middleware::AuthorizationServiceLayer,
+        models::{LogType, NewUser},
+        store_user_with_api_key,
+        testing::TestContext,
     };
     use tower::util::ServiceExt;
 
@@ -56,7 +59,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .method(http::Method::GET)
-                    .uri("/users")
+                    .uri("/sample-endpoints")
                     .header(
                         "API_KEY",
                         &user.api_keys(&mut test_context.conn()).first().unwrap().key,
@@ -73,7 +76,7 @@ mod tests {
         let log = user_logs.first().unwrap();
 
         assert_eq!(log.method, http::Method::GET.to_string());
-        assert_eq!(log.uri, String::from("/users"));
+        assert_eq!(log.uri, String::from("/sample-endpoints"));
         assert_eq!(log.status, http::status::StatusCode::OK);
         assert_eq!(log.type_, u8::from(LogType::INFO));
     }
@@ -94,7 +97,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .method(http::Method::GET)
-                    .uri("/users")
+                    .uri("/sample-endpoints")
                     .body(Body::from(()))
                     .unwrap(),
             )
@@ -102,5 +105,52 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn test_saves_error_request_details_to_db() {
+        let test_context = TestContext::new();
+        let pool = test_context.pool();
+
+        let logger_layer = RequestLoggerLayer::new(pool.clone());
+        let app = create_app(pool).await.layer(logger_layer);
+
+        let user = store_user_with_api_key(
+            &mut test_context.conn(),
+            &NewUser {
+                name: String::from("example_user"),
+                email: String::from("user@example.com"),
+            },
+        )
+        .unwrap();
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(http::Method::GET)
+                    .uri("/fail")
+                    .header(
+                        "API_KEY",
+                        &user.api_keys(&mut test_context.conn()).first().unwrap().key,
+                    )
+                    .body(Body::from(()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+
+        let user_logs = user.logs(&mut test_context.conn());
+        let log = user_logs.first().unwrap();
+
+        assert_eq!(log.method, http::Method::GET.to_string());
+        assert_eq!(log.uri, String::from("/fail"));
+        assert_eq!(log.status, http::status::StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(log.type_, u8::from(LogType::ERROR));
+        assert_eq!(
+            log.error_message.clone().unwrap(),
+            String::from("This is a secret internal error")
+        );
     }
 }

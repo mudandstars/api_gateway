@@ -1,4 +1,4 @@
-use axum::{routing::post, Router};
+use axum::{routing::post, routing::get, Router};
 use deadpool_diesel::mysql::Pool;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use handler::{sample_endpoints, user_handler};
@@ -22,6 +22,10 @@ pub async fn create_app(pool: Pool) -> Router {
         .route(
             "/sample-endpoints",
             post(sample_endpoints::sample_endpoint).get(sample_endpoints::sample_endpoint),
+        )
+        .route(
+            "/fail",
+            get(sample_endpoints::failing_endpoint),
         )
         .route(
             "/users",

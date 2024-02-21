@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::schema::api_keys;
 use crate::schema::logs;
 use crate::schema::users;
@@ -84,6 +86,7 @@ pub struct NewLog {
     pub uri: String,
     pub status: u16,
     pub type_: u8,
+    pub error_message: Option<String>,
     pub duration_in_microseconds: u64,
 }
 
@@ -108,6 +111,15 @@ pub struct Log {
 pub enum LogType {
     INFO,
     ERROR,
+}
+
+impl fmt::Display for LogType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            LogType::INFO => write!(f, "INFO"),
+            LogType::ERROR => write!(f, "ERROR"),
+        }
+    }
 }
 
 impl From<LogType> for u8 {
