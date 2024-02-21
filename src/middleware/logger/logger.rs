@@ -7,7 +7,7 @@ use std::task::{Context, Poll};
 use std::time::Instant;
 use tower::Service;
 
-use crate::models::{ApiKey, NewLog};
+use crate::models::{ApiKey, LogType, NewLog};
 use crate::schema::api_keys;
 use crate::schema::logs;
 use diesel::prelude::*;
@@ -81,6 +81,7 @@ where
                                 status,
                                 duration_in_microseconds,
                                 api_key_id: api_key.id,
+                                type_: LogType::INFO.into(),
                             })
                             .execute(conn)
                             .expect("DB interaction failed");

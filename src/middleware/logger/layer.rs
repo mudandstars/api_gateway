@@ -25,7 +25,7 @@ impl<S> Layer<S> for RequestLoggerLayer {
 mod tests {
     use super::*;
     use crate::{
-        app::create_app, middleware::AuthorizationServiceLayer, models::NewUser,
+        app::create_app, middleware::AuthorizationServiceLayer, models::{LogType, NewUser},
         store_user_with_api_key, testing::TestContext,
     };
     use tower::util::ServiceExt;
@@ -75,6 +75,7 @@ mod tests {
         assert_eq!(log.method, http::Method::GET.to_string());
         assert_eq!(log.uri, String::from("/users"));
         assert_eq!(log.status, http::status::StatusCode::OK);
+        assert_eq!(log.type_, u8::from(LogType::INFO));
     }
 
     #[tokio::test]

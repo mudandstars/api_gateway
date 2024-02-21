@@ -21,6 +21,9 @@ diesel::table! {
         #[max_length = 255]
         uri -> Varchar,
         status -> Unsigned<Smallint>,
+        type_ -> Unsigned<Tinyint>,
+        #[max_length = 255]
+        error_message -> Nullable<Varchar>,
         duration_in_microseconds -> Unsigned<Bigint>,
         created_at -> Timestamp,
     }

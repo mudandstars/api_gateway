@@ -2,13 +2,18 @@ use crate::schema::api_keys;
 use crate::schema::logs;
 use crate::schema::users;
 use chrono;
+use diesel::backend::Backend;
+use diesel::deserialize::FromSqlRow;
+use diesel::deserialize::{self, FromSql};
+use diesel::expression::AsExpression;
 use diesel::prelude::*;
+use diesel::serialize::{self, ToSql};
+use diesel::sql_types::TinyInt;
 
 #[derive(Queryable, Selectable, Identifiable, QueryableByName)]
 #[diesel(table_name = users)]
 #[diesel(check_for_backend(diesel::mysql::Mysql))]
-#[derive(serde::Serialize)]
-#[derive(Debug)]
+#[derive(serde::Serialize, Debug)]
 pub struct User {
     pub id: u32,
     pub name: String,
@@ -78,6 +83,7 @@ pub struct NewLog {
     pub method: String,
     pub uri: String,
     pub status: u16,
+    pub type_: u8,
     pub duration_in_microseconds: u64,
 }
 
@@ -91,6 +97,52 @@ pub struct Log {
     pub method: String,
     pub uri: String,
     pub status: u16,
+    pub type_: u8,
+    pub error_message: Option<String>,
     pub duration_in_microseconds: u64,
     pub created_at: chrono::NaiveDateTime,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, AsExpression, FromSqlRow)]
+#[diesel(sql_type = diesel::sql_types::TinyInt)]
+pub enum LogType {
+    INFO,
+    ERROR,
+}
+
+impl From<LogType> for u8 {
+    fn from(log_type: LogType) -> Self {
+        match log_type {
+            LogType::INFO => 0,
+            LogType::ERROR => 1,
+        }
+    }
+}
+
+impl<DB> ToSql<TinyInt, DB> for LogType
+where
+    DB: Backend,
+    u8: ToSql<TinyInt, DB>,
+{
+    fn to_sql<'a>(&self, out: &mut serialize::Output<DB>) -> serialize::Result {
+        match *self {
+            LogType::INFO => ToSql::<TinyInt, DB>::to_sql(&0, out),
+            LogType::ERROR => ToSql::<TinyInt, DB>::to_sql(&1, out),
+        }
+    }
+}
+
+impl<DB> FromSql<TinyInt, DB> for LogType
+where
+    DB: Backend,
+    u8: FromSql<TinyInt, DB>,
+{
+    fn from_sql(raw_bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
+        let value = u8::from_sql(raw_bytes)?;
+        match value {
+            0 => Ok(LogType::INFO),
+            1 => Ok(LogType::ERROR),
+            _ => Err("Unrecognized value for LogType".into()),
+        }
+    }
 }

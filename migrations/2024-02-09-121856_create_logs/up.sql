@@ -5,6 +5,8 @@ CREATE TABLE logs (
     `method` VARCHAR(6) NOT NULL,
     `uri` VARCHAR(255) NOT NULL,
     `status` SMALLINT UNSIGNED NOT NULL,
+    type_ TINYINT UNSIGNED NOT NULL,
+    error_message VARCHAR(255),
     duration_in_microseconds BIGINT UNSIGNED NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
