@@ -27,14 +27,13 @@ mod tests {
     use crate::{
         app::create_app,
         middleware::AuthorizationServiceLayer,
-        models::{LogType, NewUser},
-        store_user_with_api_key,
-        testing::TestContext,
+        models::LogType,
+        testing::{test_user, TestContext},
     };
     use tower::util::ServiceExt;
 
     use axum::{
-        body::Body,
+        body::{to_bytes, Body},
         http::{self, Request, StatusCode},
     };
 
@@ -46,14 +45,7 @@ mod tests {
         let logger_layer = RequestLoggerLayer::new(pool.clone());
         let app = create_app(pool).await.layer(logger_layer);
 
-        let user = store_user_with_api_key(
-            &mut test_context.conn(),
-            &NewUser {
-                name: String::from("example_user"),
-                email: String::from("user@example.com"),
-            },
-        )
-        .unwrap();
+        let user = test_user(&test_context);
 
         let response = app
             .oneshot(
@@ -115,14 +107,7 @@ mod tests {
         let logger_layer = RequestLoggerLayer::new(pool.clone());
         let app = create_app(pool).await.layer(logger_layer);
 
-        let user = store_user_with_api_key(
-            &mut test_context.conn(),
-            &NewUser {
-                name: String::from("example_user"),
-                email: String::from("user@example.com"),
-            },
-        )
-        .unwrap();
+        let user = test_user(&test_context);
 
         let response = app
             .oneshot(
@@ -152,5 +137,42 @@ mod tests {
             log.error_message.clone().unwrap(),
             String::from("This is a secret internal error")
         );
+    }
+
+    #[tokio::test]
+    async fn test_removes_error_from_response_if_there_is_any() {
+        let test_context = TestContext::new();
+        let pool = test_context.pool();
+
+        let logger_layer = RequestLoggerLayer::new(pool.clone());
+        let app = create_app(pool).await.layer(logger_layer);
+
+        let user = test_user(&test_context);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(http::Method::GET)
+                    .uri("/fail")
+                    .header(
+                        "API_KEY",
+                        &user.api_keys(&mut test_context.conn()).first().unwrap().key,
+                    )
+                    .body(Body::from(()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+
+        let (_parts, body) = response.into_parts();
+        let bytes = to_bytes(body, 1000)
+            .await
+            .expect("Failed to collect body bytes");
+        let error_message = Some(String::from(
+            std::str::from_utf8(&bytes).expect("Body is not valid UTF-8"),
+        ));
+        assert_eq!(error_message, Some(String::new()));
     }
 }

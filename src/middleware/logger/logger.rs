@@ -75,14 +75,15 @@ where
             let _ = conn
                 .interact(move |conn| {
                     println!(
-                        "{} {}: {{method={} uri={:?} status={} duration(μs)={} API_KEY={}}}",
+                        "{} {}: {{\n\tmethod: {} \n\turi: {:?} \n\tstatus: {} \n\tduration(μs): {} \n\tAPI_KEY: {} \n\terror: {}\n}}",
                         now.to_rfc3339_opts(chrono::SecondsFormat::Micros, true),
                         log_type,
                         method,
                         uri,
                         status,
                         duration_in_microseconds,
-                        api_key_str
+                        api_key_str,
+                        &error_message.as_ref().unwrap_or(&String::from("None")),
                     );
                     let api_key = api_keys::table
                         .filter(api_keys::key.eq(api_key_str))
@@ -106,7 +107,12 @@ where
                 })
                 .await;
 
-            let response = Response::from_parts(parts, Body::from(bytes));
+            let body = if status == StatusCode::INTERNAL_SERVER_ERROR {
+                Body::empty()
+            } else {
+                Body::from(bytes)
+            };
+            let response = Response::from_parts(parts, body);
             Ok(response)
         })
     }

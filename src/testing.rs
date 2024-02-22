@@ -1,3 +1,4 @@
+use axum::Router;
 use deadpool_diesel::mysql::Pool;
 use diesel::mysql::MysqlConnection;
 use diesel::prelude::*;
@@ -9,7 +10,20 @@ use std::time::SystemTime;
 
 use crate::app::mysql_pool;
 use crate::database::establish_connection;
+use crate::models::{NewUser, User};
+use crate::store_user_with_api_key;
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations/");
+
+pub fn test_user(test_context: &TestContext) -> User {
+    store_user_with_api_key(
+        &mut test_context.conn(),
+        &NewUser {
+            name: String::from("example_user"),
+            email: String::from("user@example.com"),
+        },
+    )
+    .unwrap()
+}
 
 pub struct TestContext {
     db_url: String,
@@ -30,11 +44,11 @@ impl TestContext {
     }
 
     pub fn pool(&self) -> Pool {
-       mysql_pool(&self.db_url)
+        mysql_pool(&self.db_url)
     }
 
     pub fn conn(&self) -> MysqlConnection {
-       establish_connection(&self.db_url)
+        establish_connection(&self.db_url)
     }
 
     fn create_new_database(name: &str) -> String {

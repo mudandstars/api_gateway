@@ -24,7 +24,10 @@ impl<S> Layer<S> for AuthorizationServiceLayer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{app::create_app, models::NewUser, store_user_with_api_key, testing::TestContext};
+    use crate::{
+        app::create_app,
+        testing::{test_user, TestContext},
+    };
     use tower::util::ServiceExt;
 
     use axum::{
@@ -40,14 +43,7 @@ mod tests {
         let authorization_service_layer = AuthorizationServiceLayer::new(pool.clone());
         let app = create_app(pool).await.layer(authorization_service_layer);
 
-        let user = store_user_with_api_key(
-            &mut test_context.conn(),
-            &NewUser {
-                name: String::from("example_user"),
-                email: String::from("user@example.com"),
-            },
-        )
-        .unwrap();
+        let user = test_user(&test_context);
 
         let response = app
             .oneshot(
@@ -98,14 +94,7 @@ mod tests {
         let authorization_service_layer = AuthorizationServiceLayer::new(pool.clone());
         let app = create_app(pool).await.layer(authorization_service_layer);
 
-        let user = store_user_with_api_key(
-            &mut test_context.conn(),
-            &NewUser {
-                name: String::from("example_user"),
-                email: String::from("user@example.com"),
-            },
-        )
-        .unwrap();
+        let user = test_user(&test_context);
 
         let api_keys = user.api_keys(&mut test_context.conn());
         if let Some(api_key) = api_keys.first() {
@@ -130,7 +119,10 @@ mod tests {
 
         let api_keys = user.api_keys(&mut test_context.conn());
         if let Some(api_key) = api_keys.first() {
-            assert!(&api_key.last_used_at.is_some(), "api key's last_used_at was not set");
+            assert!(
+                &api_key.last_used_at.is_some(),
+                "api key's last_used_at was not set"
+            );
         } else {
             panic!("api key was not found")
         }

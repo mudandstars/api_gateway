@@ -50,10 +50,6 @@ async fn test_user_can_be_stored() {
         .find(user_id as u32)
         .first(&mut test_context.conn());
 
-    dbg!("{}", &user.as_ref().unwrap().name);
-    dbg!("{}", &user.as_ref().unwrap().email);
-    dbg!("{}", &user.as_ref().unwrap().id);
-
     match user {
         Ok(user) => {
             assert_eq!(user.name, new_user.name);
