@@ -1,12 +1,15 @@
 # Api-Gateway
 
 ### This is my personal practice project to advance my rust expertise using axum and diesel.
+---
 
-### (Possible) Goals
-###### NEXT:
-- remove log
-- remove error message from the response
+### Summary
+- I wrote a simple web-server in rust that may act as an api gateway, managing users' auth_tokens and performing other tasks such as logging
+- I learned a lot about Rust project structure, syntax and best-practices
+---
 
+### Original Objectives
+Most of them have been implemented.
 -   can manage users and their api keys via api
 -   has a few sample endpoints that fulfill no real purpose
 -   when calling upon those endpoints, the following happens
@@ -17,4 +20,5 @@
     -   Monitor server performance metrics (e.g., response time, error rate)
     -   Define standardized error responses for various types of errors
         -   Implement error middleware to handle exceptions and return appropriate responses
--   Generate API documentation (e.g., using OpenAPI/Swagger) for developers
+
+
